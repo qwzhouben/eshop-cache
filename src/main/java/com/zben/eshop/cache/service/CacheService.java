@@ -1,6 +1,7 @@
 package com.zben.eshop.cache.service;
 
 import com.zben.eshop.cache.model.ProductInfo;
+import com.zben.eshop.cache.model.ShopInfo;
 
 /**
  * @DESC: ehcache service
@@ -22,4 +23,44 @@ public interface CacheService {
      * @return
      */
     public ProductInfo findById(Integer id);
+
+    /**
+     * 保存商品信息到本地缓存
+     * @param productInfo
+     * @return
+     */
+    ProductInfo saveProductInfo2LocalCache(ProductInfo productInfo);
+
+    /**
+     * 保存商品信息到redis
+     * @param productInfo
+     */
+    void saveProductInfo2RedisCache(ProductInfo productInfo);
+
+    /**
+     * 从本地缓存获取商品信息
+     * @param productId
+     * @return
+     */
+    ProductInfo getProductInfoFromLocalCache(Long productId);
+
+    /**
+     * 保存店铺信息到本地缓存
+     * @param shopInfo
+     * @return
+     */
+    ShopInfo saveShopInfo2LocalCache(ShopInfo shopInfo);
+
+    /**
+     * 保存店铺信息到redis
+     * @param shopInfo
+     */
+    void saveShopInfo2RedisCache(ShopInfo shopInfo);
+
+    /**
+     * 从本地缓存获取店铺信息
+     * @param shopId
+     * @return
+     */
+    ShopInfo getShopInfoFromLocalCache(Long shopId);
 }

@@ -4,3 +4,13 @@ spring:
     username: eshop
     password: eshop
     driver-class-name: com.mysql.jdbc.Driver
+
+kafka:
+  consumer:
+    zookeeper:
+      connect: 192.168.3.105:2181,192.168.3.82:2181,192.168.2.99:2181
+    groupId: eshop-cache-group
+    enable-auto-commit: true
+    bootstrap-servers: 192.168.3.105:9092,192.168.3.82:9092,192.168.2.99:9092
+    value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
