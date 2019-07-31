@@ -1,6 +1,7 @@
 package com.zben.eshop.cache.service;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.zben.eshop.cache.model.ProductInfo;
 import com.zben.eshop.cache.model.ShopInfo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,5 +69,15 @@ public class CacheServiceImpl implements CacheService {
     @Cacheable(value = CACHE_NAME, key = "'shop_info_' + #shopId")
     public ShopInfo getShopInfoFromLocalCache(Long shopId) {
         return null;
+    }
+
+    @Override
+    public ProductInfo getProductInfoFromRedis(Long productId) {
+        return JSONObject.parseObject(jedisCluster.get(PRODUCT_KEY + productId), ProductInfo.class);
+    }
+
+    @Override
+    public ShopInfo getShopInfoFromRedis(Long shopId) {
+        return JSONObject.parseObject(jedisCluster.get(SHOP_KEY + shopId), ShopInfo.class);
     }
 }

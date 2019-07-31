@@ -63,4 +63,18 @@ public interface CacheService {
      * @return
      */
     ShopInfo getShopInfoFromLocalCache(Long shopId);
+
+    /**
+     * 从redis中获取商品信息
+     * @param productId
+     * @return
+     */
+    ProductInfo getProductInfoFromRedis(Long productId);
+
+    /**
+     * 从redis中获取店铺信息
+     * @param shopId
+     * @return
+     */
+    ShopInfo getShopInfoFromRedis(Long shopId);
 }

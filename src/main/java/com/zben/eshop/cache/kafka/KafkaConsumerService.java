@@ -6,9 +6,13 @@ import com.alibaba.fastjson.JSONObject;
 import com.zben.eshop.cache.model.ProductInfo;
 import com.zben.eshop.cache.model.ShopInfo;
 import com.zben.eshop.cache.service.CacheService;
+import com.zben.eshop.cache.zk.ZookeeperSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 /**
  * @date
@@ -19,6 +23,7 @@ public class KafkaConsumerService {
 
     @Autowired
     CacheService cacheService;
+    private static SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     @KafkaListener(topics = "eshop-cache-message")
     public void processMessage(String content) {
@@ -49,11 +54,36 @@ public class KafkaConsumerService {
         // 直接用注释模拟：getProductInfo?productId=1，传递过去
         // 商品信息服务，一般来说就会去查询数据库，去获取productId=1的商品信息，然后返回回来
 
-        String productInfoJSON = "{\"id\": 1, \"name\": \"iphone7手机\", \"price\": 5599, \"pictureList\":\"a.jpg,b.jpg\", \"specification\": \"iphone7的规格\", \"service\": \"iphone7的售后服务\", \"color\": \"红色,白色,黑色\", \"size\": \"5.5\", \"shopId\": 1}";
+        String productInfoJSON = "{\"id\": 16, \"name\": \"iphone7手机\", \"price\": 5599, \"pictureList\":\"a.jpg,b.jpg\", \"specification\": \"iphone7的规格\", \"service\": \"iphone7的售后服务\", \"color\": \"红色,白色,黑色\", \"size\": \"5.5\", \"shopId\": 1, \"modifyTime\":\"2019-07-29 16:30:00\"}";
         ProductInfo productInfo = JSONObject.parseObject(productInfoJSON, ProductInfo.class);
+        //将数据写到缓存之前，先要获取zk的锁
+        ZookeeperSession zkSession = ZookeeperSession.getInstance();
+        zkSession.acquireDistributedLock(productId);
+        //获取到了锁, 从redis中读取数据
+        ProductInfo existProductInfo = cacheService.getProductInfoFromRedis(productId);
+        if (existProductInfo != null) {
+            try {
+                // 比较当前数据的时间版本比已有数据的时间版本是新还是旧
+                if (df.parse(productInfo.getModifyTime()).before(df.parse(existProductInfo.getModifyTime()))) {
+                    System.out.println("current date[" + productInfo.getModifyTime() + "] is before existed date[" + existProductInfo.getModifyTime() + "]");
+                    return;
+                }
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            System.out.println("current date[" + productInfo.getModifyTime() + "] is after existed date[" + existProductInfo.getModifyTime() + "]");
+        } else {
+            System.out.println("existed product info is null......");
+        }
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         cacheService.saveProductInfo2LocalCache(productInfo);
         System.out.println("===================获取刚保存到本地缓存的商品信息：" + cacheService.getProductInfoFromLocalCache(productId));
         cacheService.saveProductInfo2RedisCache(productInfo);
+        zkSession.releaseDistributedLock(productId);
     }
 
     /**

@@ -7,13 +7,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.concurrent.CountDownLatch;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class CacheApplicationTests {
 
 	@Autowired
 	KafkaTemplate kafkaTemplate;
-
+	private CountDownLatch countDownLatch = new CountDownLatch(1);
 	@Test
 	public void contextLoads() throws InterruptedException {
 		kafkaTemplate.send("eshop-cache-message", "{\"serviceId\":\"shopInfoService\",\"shopId\":\"1\"}");

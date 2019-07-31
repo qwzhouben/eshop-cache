@@ -3,6 +3,7 @@ package com.zben.eshop.cache.model;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import scala.util.parsing.combinator.testing.Str;
 
 /**
  * @DESC: 商品信息
@@ -23,5 +24,5 @@ public class ProductInfo {
     private String color;
     private String size;
     private Long shopId;
-
+    private String modifyTime;
 }
