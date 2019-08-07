@@ -3,6 +3,7 @@ package com.zben.eshop.cache.controller;
 import com.alibaba.fastjson.JSONObject;
 import com.zben.eshop.cache.model.ProductInfo;
 import com.zben.eshop.cache.model.ShopInfo;
+import com.zben.eshop.cache.prewarm.ProductCachePreWarmThread;
 import com.zben.eshop.cache.rebuild.RebuildCacheQueue;
 import com.zben.eshop.cache.service.CacheService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +42,9 @@ public class CacheController {
         ProductInfo productInfo = null;
 
         productInfo = cacheService.getProductInfoFromRedis(productId);
-        System.out.println("=================从redis中获取缓存，商品信息=" + productInfo);
+        if(productInfo != null) {
+            System.out.println("=================从redis中获取缓存，商品信息=" + productInfo);
+        }
 
         if(productInfo == null) {
             productInfo = cacheService.getProductInfoFromLocalCache(productId);
@@ -50,7 +53,7 @@ public class CacheController {
 
         if(productInfo == null) {
             // 就需要从数据源重新拉去数据，重建缓存，但是这里先不讲
-            String productInfoJSON = "{\"id\": 16, \"name\": \"iphone7手机\", \"price\": 5599, \"pictureList\":\"a.jpg,b.jpg\", \"specification\": \"iphone7的规格\", \"service\": \"iphone7的售后服务\", \"color\": \"红色,白色,黑色\", \"size\": \"5.5\", \"shopId\": 1, \"modifyTime\": \"2019-07-29 16:31:00\"}";
+            String productInfoJSON = "{\"id\": "+productId+", \"name\": \"iphone7手机\", \"price\": 5599, \"pictureList\":\"a.jpg,b.jpg\", \"specification\": \"iphone7的规格\", \"service\": \"iphone7的售后服务\", \"color\": \"红色,白色,黑色\", \"size\": \"5.5\", \"shopId\": 1, \"modifyTime\": \"2019-07-29 16:31:00\"}";
             productInfo = JSONObject.parseObject(productInfoJSON, ProductInfo.class);
             // 将数据推送到一个内存队列中
             RebuildCacheQueue rebuildCacheQueue = RebuildCacheQueue.getInstance();
@@ -76,5 +79,10 @@ public class CacheController {
             System.out.println("========从本地缓存中获取的店铺："+shopInfo);
         }
         return shopInfo;
+    }
+
+    @GetMapping("/preWarmCache")
+    public void preWarmCache() {
+        new ProductCachePreWarmThread().start();
     }
 }

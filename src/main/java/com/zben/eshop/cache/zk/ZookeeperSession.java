@@ -1,6 +1,7 @@
 package com.zben.eshop.cache.zk;
 
 import org.apache.zookeeper.*;
+import org.apache.zookeeper.data.Stat;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -21,7 +22,7 @@ public class ZookeeperSession {
             //连接zk
             zookeeper = new ZooKeeper("192.168.3.105:2181,192.168.3.82:2181,192.168.2.99:2181",
                     50000,
-                                new MyWatcher());
+                    new MyWatcher());
             // 给一个状态CONNECTING，连接中
             System.out.println(zookeeper.getState());
 
@@ -61,6 +62,21 @@ public class ZookeeperSession {
 
     /**
      * 获取分布式锁
+     */
+    public boolean acquireFastFailDistributedLock(String path) {
+        try {
+            zookeeper.create(path, "".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE,
+                    CreateMode.EPHEMERAL);
+            System.out.println("success to acquire lock for [" + path + "]");
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * 获取分布式锁
      * @param productId
      */
     public void acquireDistributedLock(Long productId) {
@@ -90,6 +106,34 @@ public class ZookeeperSession {
     }
 
     /**
+     * 获取分布式锁
+     */
+    public void acquireDistributedLock(String path) {
+        try {
+            zookeeper.create(path, "".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE,
+                    CreateMode.EPHEMERAL);
+            System.out.println("success to acquire lock for " + path);
+        } catch (Exception e) {
+            // 如果那个商品对应的锁的node，已经存在了，就是已经被别人加锁了，那么就这里就会报错
+            // NodeExistsException
+            int count=0;
+            while (true) {
+                try {
+                    Thread.sleep(1000);
+                    zookeeper.create(path, "".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE,
+                            CreateMode.EPHEMERAL);
+
+                } catch (Exception e1) {
+                    count++;
+                    continue;
+                }
+                System.out.println("success to acquire lock for after " + count + " times try......");
+                break;
+            }
+        }
+    }
+
+    /**
      * 释放掉一个分布式锁
      * @param productId
      */
@@ -100,6 +144,57 @@ public class ZookeeperSession {
             System.out.println("release this lock for productId= "+productId);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * 释放掉一个分布式锁
+     * @param path
+     */
+    public void releaseDistributedLock(String path) {
+        try {
+            zookeeper.delete(path, -1);
+            System.out.println("release this lock for " + path);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 释放掉一个分布式锁
+     */
+    public void releaseDistributedLock() {
+        String path = "/taskid-list-lock";
+        try {
+            zookeeper.delete(path, -1);
+            System.out.println("release this lock for taskid-list-lock");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String getNodeData(String path) {
+        try {
+            return new String(zookeeper.getData(path, false, new Stat()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    public void setNodeData(String path, String data) {
+        try {
+            zookeeper.setData(path, data.getBytes(), -1);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void createNode(String path) {
+        try {
+            zookeeper.create(path, "".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        } catch (Exception e) {
+
         }
     }
 
